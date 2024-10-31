@@ -15,7 +15,9 @@ func onConnect(conn *websocket.Conn) {
 	log.Printf("user connected: %s", conn.RemoteAddr())
 }
 func onRegister(clientID int) {
-	user := clients[clientID]
+	mu.Lock()
+	user := clients.clientsmap[clientID]
+	mu.Unlock()
 	message := &Register{Type: "register", UserID: user.ID}
 	data, err := json.Marshal(message)
 	if err != nil {
@@ -34,14 +36,14 @@ func OnHeartbeat(clientID int, done <-chan bool, wg *sync.WaitGroup) {
 		select {
 		case <-time.After(10 * time.Second):
 			mu.Lock()
-			client, exists := clients[clientID]
+			client, exists := clients.clientsmap[clientID]
 			if !exists {
 				mu.Unlock()
 				return
 			}
 
 			if time.Since(client.LastActivity) > 10*time.Second {
-				log.Printf("Client %s didn't respond to heartbeat, disconnecting", clients[clientID].Conn.RemoteAddr())
+				log.Printf("Client %s didn't respond to heartbeat, disconnecting", client.Conn.RemoteAddr())
 				client.Conn.Close()
 				mu.Unlock()
 				return
@@ -65,17 +67,16 @@ func OnHeartbeat(clientID int, done <-chan bool, wg *sync.WaitGroup) {
 
 func ListenClient(clientID int, done chan<- bool, wg *sync.WaitGroup) {
 	defer wg.Done()
-	user := clients[clientID]
-
+	mu.Lock()
+	user := clients.clientsmap[clientID]
+	mu.Unlock()
 	for {
 		_, message, err := user.Conn.ReadMessage()
 		if err != nil {
 			log.Printf("user disconected: %s", user.Conn.RemoteAddr())
-			mu.Lock()
-			delete(clients, clientID)
-			countuser--
+
+			clients.DeleteUser(clientID)
 			OncounterNotify(countuser)
-			mu.Unlock()
 			done <- true
 			break
 		}
@@ -90,20 +91,22 @@ func ListenClient(clientID int, done chan<- bool, wg *sync.WaitGroup) {
 		switch typemessage.Type {
 		case "heartbeat":
 			fmt.Printf("heartbeat from: %s\n", user.Conn.RemoteAddr())
-			mu.Lock()
 			user.LastActivity = time.Now()
-			mu.Unlock()
 
 		case "subMainMenu":
 			subuser := &SubMain{}
 			json.Unmarshal(message, subuser)
 			if subuser.Subscription {
+				mu.Lock()
 				subMainMenu[clientID] = user
+				mu.Unlock()
 			} else {
+				mu.Lock()
 				delete(subMainMenu, clientID)
+				mu.Unlock()
 			}
 		case "findInterlocutor":
-			continue
+			fmt.Println("got it")
 
 		default:
 			fmt.Printf("невідомий тип повідомлення: %s", typemessage.Type)
@@ -113,10 +116,12 @@ func ListenClient(clientID int, done chan<- bool, wg *sync.WaitGroup) {
 }
 
 func OncounterNotify(count int) {
+	mu.Lock()
 	for _, conn := range subMainMenu {
 
 		sMM := &UpdateCountUser{Type: "subMainMenu", Count: count}
 		data, _ := json.Marshal(sMM)
 		conn.Conn.WriteMessage(websocket.TextMessage, data)
 	}
+	mu.Unlock()
 }

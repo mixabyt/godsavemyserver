@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"sync"
-	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -20,16 +19,10 @@ var (
 	countuser   = 0
 	id          = 0
 	subMainMenu = make(map[int]*Client) // підписка на лічильник користувачів
-	clients     = make(map[int]*Client)
-	queueUsers  = make([]*Client, 0, 2)
-	mu          sync.Mutex
+	clients     = &Clients{clientsmap: make(map[int]*Client)}
+	// queueUsers  = &QueueUsers{Queue: make([]*Client, 0, 1)}
+	mu sync.Mutex
 )
-
-type Client struct {
-	ID           int
-	Conn         *websocket.Conn
-	LastActivity time.Time
-}
 
 func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -42,22 +35,18 @@ func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 }
 
 func handlemessage(conn *websocket.Conn) {
+	mu.Lock()
 	clientID := id
+	mu.Unlock()
 	fmt.Printf("айді юзера %d\n", clientID)
 
 	// Додаємо клієнта до мапи
-	mu.Lock()
-	user := &Client{ID: clientID, Conn: conn, LastActivity: time.Now().Add(10 * time.Second)}
-	clients[clientID] = user
-	subMainMenu[clientID] = user
-	countuser++
-	id++
-	fmt.Println(clients)
-	mu.Unlock()
+
+	clients.AddNewUser(clientID, conn)
 
 	// надсилай користувачу його айді
 	onRegister(clientID)
-	OncounterNotify(countuser)
+	OncounterNotify(countuser) // оновлюй лічильник юзерів
 
 	done := make(chan bool) // змінна для контролю з'єднання (завершає горутину)
 	var wg sync.WaitGroup
