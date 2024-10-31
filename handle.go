@@ -20,8 +20,9 @@ var (
 	id          = 0
 	subMainMenu = make(map[int]*Client) // підписка на лічильник користувачів
 	clients     = &Clients{clientsmap: make(map[int]*Client)}
-	// queueUsers  = &QueueUsers{Queue: make([]*Client, 0, 1)}
-	mu sync.Mutex
+	queueUsers  = &QueueUsers{Queue: make([]*Client, 0, 1)}
+	rooms       = &Rooms{Rooms: make(map[int]*Room)}
+	mu          sync.Mutex
 )
 
 func HandleWebSocket(w http.ResponseWriter, r *http.Request) {

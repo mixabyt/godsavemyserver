@@ -12,6 +12,7 @@ type Clients struct {
 
 type Client struct {
 	ID           int
+	RoomID       int
 	Conn         *websocket.Conn
 	LastActivity time.Time
 }

@@ -74,7 +74,7 @@ func ListenClient(clientID int, done chan<- bool, wg *sync.WaitGroup) {
 		_, message, err := user.Conn.ReadMessage()
 		if err != nil {
 			log.Printf("user disconected: %s", user.Conn.RemoteAddr())
-
+			// сповістити користувача по кімнаті що інший покинув
 			clients.DeleteUser(clientID)
 			OncounterNotify(countuser)
 			done <- true
@@ -106,7 +106,18 @@ func ListenClient(clientID int, done chan<- bool, wg *sync.WaitGroup) {
 				mu.Unlock()
 			}
 		case "findInterlocutor":
-			fmt.Println("got it")
+			interlocutor, inqueue := queueUsers.AddtoQueue(user)
+			if inqueue {
+
+				queueUsers.DeleteFromQueue()
+				rooms.AddToRoom(interlocutor.RoomID, user.ID)
+			} else {
+				rooms.CreateRoom(clientID)
+			}
+			log.Println("кількість кімнат:", rooms.Rooms)
+			for _, v := range rooms.Rooms {
+				log.Println(v)
+			}
 
 		default:
 			fmt.Printf("невідомий тип повідомлення: %s", typemessage.Type)
