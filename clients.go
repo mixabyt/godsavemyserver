@@ -19,7 +19,7 @@ type Client struct {
 
 func (c *Clients) AddNewUser(clientID int, conn *websocket.Conn) {
 	mu.Lock()
-	user := &Client{ID: clientID, Conn: conn, LastActivity: time.Now().Add(10 * time.Second)}
+	user := &Client{ID: clientID, Conn: conn, LastActivity: time.Now().Add(10 * time.Second), RoomID: -1}
 	c.clientsmap[clientID] = user
 	subMainMenu[clientID] = user
 	countuser++

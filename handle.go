@@ -42,11 +42,8 @@ func handlemessage(conn *websocket.Conn) {
 	fmt.Printf("айді юзера %d\n", clientID)
 
 	// Додаємо клієнта до мапи
-
 	clients.AddNewUser(clientID, conn)
 
-	// надсилай користувачу його айді
-	onRegister(clientID)
 	OncounterNotify(countuser) // оновлюй лічильник юзерів
 
 	done := make(chan bool) // змінна для контролю з'єднання (завершає горутину)
@@ -60,5 +57,6 @@ func handlemessage(conn *websocket.Conn) {
 	wg.Add(1)
 	go ListenClient(clientID, done, &wg)
 	wg.Wait()
+	fmt.Println("end for some user")
 
 }

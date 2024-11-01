@@ -1,13 +1,11 @@
 package main
 
+// для визначення типу повідомлення
 type BaseMessage struct {
 	Type string `json:"type"`
 }
 
-type Register struct {
-	Type   string `json:"type"`
-	UserID int    `json:"user_id"`
-}
+//надіслати користувачу його айді
 
 type SubMain struct {
 	Type         string `json:"type"`
@@ -17,4 +15,17 @@ type SubMain struct {
 type UpdateCountUser struct {
 	Type  string `json:"type"`
 	Count int    `json:"count"`
+}
+
+type FindInterlocutor struct {
+	Type string `json:"type"`
+}
+
+type TextMessage struct {
+	Type string `json:"type"`
+	Text string `json:"text"`
+}
+
+type DeleteNotice struct {
+	Type string `json:"type"`
 }

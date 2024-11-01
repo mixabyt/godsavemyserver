@@ -1,6 +1,9 @@
 package main
 
-import "log"
+import (
+	"fmt"
+	"log"
+)
 
 type QueueUsers struct {
 	Queue []*Client
@@ -13,7 +16,7 @@ func (q *QueueUsers) AddtoQueue(c *Client) (*Client, bool) {
 		q.Queue = append(q.Queue, c)
 		return nil, false
 	} else {
-		log.Println(q.Queue[0])
+		log.Println("айді до якого підєднуюсь:", q.Queue[0].ID)
 		return q.Queue[0], true
 	}
 }
@@ -21,5 +24,6 @@ func (q *QueueUsers) AddtoQueue(c *Client) (*Client, bool) {
 func (q *QueueUsers) DeleteFromQueue() {
 	mu.Lock()
 	q.Queue = q.Queue[:0]
+	fmt.Println(q.Queue)
 	mu.Unlock()
 }
